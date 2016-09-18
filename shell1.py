@@ -17,7 +17,7 @@ class Classifier:
     def predict(self, test_data):
         results = []
         for i in test_data:
-            results.append(self.predict_single(test_data[i]))
+            results.append(self.predict_single(i))
         return results
 
 def get_split_size(success=False):
