@@ -8,6 +8,8 @@ pd.options.mode.chained_assignment = None
 
 class HardCodedClassifier:
     classes = None
+    target = None
+    data = None
 
     def train(self, train_data, train_target):
         print("And thus, the Machine was trained.")
@@ -25,10 +27,23 @@ class HardCodedClassifier:
         return results
 
 
+class DecisionTreeClassifier(HardCodedClassifier):
+    def info_gain(self, test_data):
+        columns = []
+        for i in range(self.data.shape[1]):
+            columns.append(test_data[:, i])
+
+        entropy = []
+        for col in columns:
+            entropy.append(sum(list(map(lambda val: -val * np.log2(val) if val != 0 else 0, col))))
+
+        feature = np.argmax(entropy)
+        values = np.unique(self.data[:, feature])
+        print(values)
+
+
 class KGNClassifier(HardCodedClassifier):
     """K-GoodNeighbors, a nearest neighbors algorithm"""
-    target = None
-    data = None
     k = None
     mean = None
     std = None
@@ -118,11 +133,20 @@ def get_dataset():
         car_data.persons = car_data.persons.replace("2", 2).replace("4", 4).replace("more", 6)
         car_data.lug_boot = car_data.lug_boot.replace("small", 1).replace("med", 2).replace("big", 3)
         car_data.safety = car_data.safety.replace("low", 1).replace("med", 2).replace("high", 3)
+
         return car_data.values, car_target.values, ["unacc", "acc", "good", "vgood"]
 
 
 def main(argv):
-    process_data()
+    # process_data()
+    d, t, ta = get_dataset()
+
+    myClassifier = DecisionTreeClassifier()
+    train, test, t_target, test_target = get_split_size(d, t, True)
+    myClassifier.data = train
+    myClassifier.info_gain(test)
+
+    myClassifier
 
 if __name__ == '__main__':
     main(sys.argv)
