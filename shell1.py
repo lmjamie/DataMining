@@ -1,6 +1,7 @@
 from sklearn import datasets as ds
 import pandas as pd
 import numpy as np
+from collections import Counter as co
 from sklearn.cross_validation import train_test_split as tts
 import sys
 pd.options.mode.chained_assignment = None
@@ -28,18 +29,35 @@ class HardCodedClassifier:
 
 
 class DecisionTreeClassifier(HardCodedClassifier):
-    def info_gain(self, test_data):
+    def info_gain(self):
+
+        # splits the data into columns on each attribute
         columns = []
         for i in range(self.data.shape[1]):
-            columns.append(test_data[:, i])
+            columns.append(self.data[:, i])
 
         entropy = []
         for col in columns:
             entropy.append(sum(list(map(lambda val: -val * np.log2(val) if val != 0 else 0, col))))
 
         feature = np.argmax(entropy)
-        values = np.unique(self.data[:, feature])
+        values = np.unique(columns[feature])
         print(values)
+
+        cnt = co()
+        class_counts = []
+        for val in values:
+            for index in [i for i, x in enumerate(self.target) if columns[feature][i] == val]:
+                cnt[self.target[index]] += 1
+            class_counts.append(list(cnt.values()))
+            print(list(cnt.values()))
+            cnt.clear()
+
+        print(class_counts)
+        # for i in values[1]:
+        #     class_count.append(self.target[i])
+        # feature_count = np.zeros(len(values[0]))
+        # print(co(class_count))
 
 
 class KGNClassifier(HardCodedClassifier):
@@ -141,12 +159,12 @@ def main(argv):
     # process_data()
     d, t, ta = get_dataset()
 
-    myClassifier = DecisionTreeClassifier()
+    my_classifier = DecisionTreeClassifier()
     train, test, t_target, test_target = get_split_size(d, t, True)
-    myClassifier.data = train
-    myClassifier.info_gain(test)
+    my_classifier.data = train
+    my_classifier.target = t_target
+    my_classifier.info_gain()
 
-    myClassifier
 
 if __name__ == '__main__':
     main(sys.argv)
