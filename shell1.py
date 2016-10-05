@@ -7,7 +7,7 @@ import sys
 pd.options.mode.chained_assignment = None
 
 
-class Node():
+class Node:
     def __init__(self, feature_name, child_nodes):
         self.feature_name = feature_name
         self.child_nodes = child_nodes
@@ -43,9 +43,12 @@ class DecisionTreeClassifier(HardCodedClassifier):
         self.target = train_target
         self.tree = self.make_tree(range(train_data.shape[1]), range(train_target.shape[0]))
 
+    def predict_single(self, test_instance):
+        pass
+
     def make_tree(self, features_left, indices):
         # get list of each class result for the indices
-        classes_list = list(map(lambda i: self.target[i], indices))
+        classes_list = list(map(lambda ind: self.target[ind], indices))
 
         # base case if there is only one unique class in list
         if np.unique(classes_list).size == 1:
@@ -57,10 +60,23 @@ class DecisionTreeClassifier(HardCodedClassifier):
 
         # which feature has the lowest entropy
         best_feature = self.best_info_gain(features_left, indices)
-        values_of_feature = np.unique(list(map(lambda i: self.data[:, best_feature][i], indices)))
+
+        # Get the unique possible values for this best feature
+        values_of_feature = np.unique(self.data[:, best_feature])
+
+        # For each possible value get the list of indices that have those values of the indices we are checking
         value_indices = list(map(
             lambda val: [ind for ind in indices if self.data[:, best_feature][ind] == val], values_of_feature))
+
+        # if any of those possible values had no indices associated with it, then make it return the most common class
+        for i in range(len(value_indices)):
+            if len(value_indices[i]) == 0:
+                value_indices[i] = [self.target.tolist().index(co(classes_list).most_common(1)[0][0])]
+
+        # remove the best feature from the list of features left
         remaining = [i for i in features_left if i != features_left[best_feature]]
+
+        # make a node with a dictionary as children.
         return Node(features_left[best_feature],
                     {x: self.make_tree(remaining, y) for x in values_of_feature for y in value_indices})
 
