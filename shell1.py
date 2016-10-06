@@ -76,9 +76,12 @@ class DecisionTreeClassifier(HardCodedClassifier):
         # remove the best feature from the list of features left
         remaining = [i for i in features_left if i != features_left[best_feature]]
 
+        classes_left = np.unique(list(map(lambda x: list(map(lambda ind: self.target[i], x)), value_indices)))
+        num_of_classes = classes_left.size
         # make a node with a dictionary as children.
         return Node(features_left[best_feature],
-                    {x: self.make_tree(remaining, y) for x in values_of_feature for y in value_indices})
+                    {x: self.make_tree(remaining, y) for x in values_of_feature for y in value_indices}) if \
+            num_of_classes > 1 else classes_left[0]
 
     def best_info_gain(self, features, indices):
         """
@@ -218,12 +221,6 @@ def main(argv):
     my_classifier.train(train, t_target)
     print(my_classifier.tree.feature_name, my_classifier.tree.child_nodes,
           my_classifier.tree.child_nodes['low'].feature_name, my_classifier.tree.child_nodes['low'].child_nodes,
-          my_classifier.tree.child_nodes['low'].child_nodes['more'].feature_name,
-          my_classifier.tree.child_nodes['low'].child_nodes['more'].child_nodes,
-          my_classifier.tree.child_nodes['low'].child_nodes['more'].child_nodes['low'].feature_name,
-          my_classifier.tree.child_nodes['low'].child_nodes['more'].child_nodes['low'].child_nodes,
-          my_classifier.tree.child_nodes['low'].child_nodes['more'].child_nodes['low'].child_nodes['vhigh'].feature_name,
-          my_classifier.tree.child_nodes['low'].child_nodes['more'].child_nodes['low'].child_nodes['vhigh'].child_nodes,
           sep='\n')
 
 
