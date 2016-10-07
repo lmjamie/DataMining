@@ -231,6 +231,9 @@ def get_dataset(convert_nominal=True):
     which = int(input("Please choose a Dataset:\n1 - Iris\n2 - Cars\n>> "))
     if which == 1:
         iris = ds.load_iris()
+        if not convert_nominal:
+            d = []
+
         return iris.data, iris.target, iris.target_names
     else:
         my_read_in = pd.read_csv("car.csv", dtype=str,
