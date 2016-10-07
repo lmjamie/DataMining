@@ -1,4 +1,5 @@
 from sklearn import datasets as ds
+from random import randint as rand
 import pandas as pd
 import numpy as np
 from collections import Counter as co
@@ -181,7 +182,7 @@ def get_split_size(data_set, target_set, success=False):
                 print("Error: Value entered was not between 1 and 0")
         except ValueError:
             print("Error: Value entered was not a decimal value")
-    return tts(data_set, target_set, train_size=split_size, random_state=2111)
+    return tts(data_set, target_set, train_size=split_size, random_state=rand(1, 100000))
 
 
 def process_data():
@@ -195,12 +196,30 @@ def process_data():
     get_accuracy(classifier.predict(test), test_target)
 
 
+def cross_validation(classifier, data, targets):
+    training, train, target, tar = tts(data, targets, random_state=rand(1, 100000))
+    training = np.append(training, train, axis=0)
+    target = np.append(target, tar, axis=0)
+    num_folds = 10
+    subset_size = len(data) // num_folds
+    results = []
+    for i in range(num_folds):
+        print("Round", i + 1)
+        testing_this_round = training[i * subset_size:][:subset_size]
+        test_target_this_round = target[i * subset_size:][:subset_size]
+        training_this_round = np.append(training[:i * subset_size], training[(i + 1) * subset_size:], axis=0)
+        train_target_this_round = np.append(target[:i * subset_size], target[(i + 1) * subset_size:], axis=0)
+        classifier.train(training_this_round, train_target_this_round)
+        results.append(get_accuracy(classifier.predict(testing_this_round), test_target_this_round))
+        print("Accuracy: {:.2f}%".format(results[i]))
+    return np.asarray(results).mean()
+
+
 def get_accuracy(results, test_targets):
     num_correct = 0
     for i in range(test_targets.size):
         num_correct += results[i] == test_targets[i]
-    print("Predicted ", num_correct, " of ", test_targets.size,
-          "\nFor an accuracy of {0:.2f}%".format(100 * (num_correct / test_targets.size)), sep="")
+    return 100 * (num_correct / test_targets.size)
 
 
 def get_classifier():
@@ -233,12 +252,11 @@ def get_dataset(convert_nominal=True):
 def main(argv):
     # process_data()
     d, t, ta = get_dataset(False)
-
     my_classifier = DecisionTreeClassifier()
-    train, test, t_target, test_target = get_split_size(d, t, True)
     my_classifier.set_classes(ta)
-    my_classifier.train(train, t_target)
-    print_level_order(my_classifier.tree)
-    get_accuracy(my_classifier.predict(test), test_target)
+    print("Mean Accuracy: {:.2f}%".format(cross_validation(my_classifier, d, t)))
+    # my_classifier.train(train, t_target)
+    # print_level_order(my_classifier.tree)
+    # get_accuracy(my_classifier.predict(test), test_target)
 if __name__ == '__main__':
     main(sys.argv)
