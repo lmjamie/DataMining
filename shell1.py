@@ -193,7 +193,7 @@ def process_data():
     training, test, training_target, test_target = get_split_size(data, target, False if option == 1 else True)
     classifier.set_classes(classes)
     classifier.train(training, training_target)
-    get_accuracy(classifier.predict(test), test_target)
+    print("{:.2f}".format(get_accuracy(classifier.predict(test), test_target)))
 
 
 def cross_validation(classifier, data, targets):
@@ -254,9 +254,11 @@ def main(argv):
     d, t, ta = get_dataset(False)
     my_classifier = DecisionTreeClassifier()
     my_classifier.set_classes(ta)
-    print("Mean Accuracy: {:.2f}%".format(cross_validation(my_classifier, d, t)))
-    # my_classifier.train(train, t_target)
-    # print_level_order(my_classifier.tree)
-    # get_accuracy(my_classifier.predict(test), test_target)
+    print("\nMean Accuracy: {:.2f}%".format(cross_validation(my_classifier, d, t)), "Building Final Tree", sep='\n')
+    my_classifier.train(d, t)
+    if input("Finished building tree\nWould you like to print? (y/n)") == 'y':
+        print_level_order(my_classifier.tree)
+
+
 if __name__ == '__main__':
     main(sys.argv)
