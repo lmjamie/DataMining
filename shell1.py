@@ -13,6 +13,25 @@ class Node:
         self.child_nodes = child_nodes
 
 
+def height(node):
+    return 0 if not isinstance(node, Node) else \
+        np.max(list(map(lambda x: height(node.child_nodes[x]) + 1, node.child_nodes.keys())))
+
+
+def print_level_order(root):
+    for i in range(1, height(root) + 1):
+        print("Level", i)
+        print_given_level(root, i)
+
+
+def print_given_level(root, level):
+    if level == 1:
+        print("Node", root.feature_name, "with branches", list(root.child_nodes.keys()))
+    else:
+        for next_node in root.child_nodes.values():
+            print_given_level(next_node, level - 1)
+
+
 class HardCodedClassifier:
     def __init__(self):
         self.classes = self.target = self.data = None
@@ -44,7 +63,10 @@ class DecisionTreeClassifier(HardCodedClassifier):
         self.tree = self.make_tree(range(train_data.shape[1]), range(train_target.shape[0]))
 
     def predict_single(self, test_instance):
-        pass
+        node = self.tree
+        while isinstance(node, Node):
+            node = node.child_nodes[test_instance[node.feature_name]]
+        return node
 
     def make_tree(self, features_left, indices):
         # get list of each class result for the indices
@@ -59,7 +81,7 @@ class DecisionTreeClassifier(HardCodedClassifier):
             return co(classes_list).most_common(1)[0][0]
 
         # which feature has the lowest entropy
-        best_feature = self.best_info_gain(features_left, indices)
+        best_feature = features_left[self.best_info_gain(features_left, indices)]
 
         # Get the unique possible values for this best feature
         values_of_feature = np.unique(self.data[:, best_feature])
@@ -74,14 +96,11 @@ class DecisionTreeClassifier(HardCodedClassifier):
                 value_indices[i] = [self.target.tolist().index(co(classes_list).most_common(1)[0][0])]
 
         # remove the best feature from the list of features left
-        remaining = [i for i in features_left if i != features_left[best_feature]]
+        remaining = [i for i in features_left if i != best_feature]
 
-        classes_left = np.unique(list(map(lambda x: list(map(lambda ind: self.target[i], x)), value_indices)))
-        num_of_classes = classes_left.size
         # make a node with a dictionary as children.
-        return Node(features_left[best_feature],
-                    {x: self.make_tree(remaining, y) for x in values_of_feature for y in value_indices}) if \
-            num_of_classes > 1 else classes_left[0]
+        return Node(best_feature,
+                    {x: self.make_tree(remaining, y) for x in values_of_feature for y in value_indices})
 
     def best_info_gain(self, features, indices):
         """
@@ -162,7 +181,7 @@ def get_split_size(data_set, target_set, success=False):
                 print("Error: Value entered was not between 1 and 0")
         except ValueError:
             print("Error: Value entered was not a decimal value")
-    return tts(data_set, target_set, train_size=split_size, random_state=20123)
+    return tts(data_set, target_set, train_size=split_size, random_state=2111)
 
 
 def process_data():
@@ -219,10 +238,7 @@ def main(argv):
     train, test, t_target, test_target = get_split_size(d, t, True)
     my_classifier.set_classes(ta)
     my_classifier.train(train, t_target)
-    print(my_classifier.tree.feature_name, my_classifier.tree.child_nodes,
-          my_classifier.tree.child_nodes['low'].feature_name, my_classifier.tree.child_nodes['low'].child_nodes,
-          sep='\n')
-
-
+    print_level_order(my_classifier.tree)
+    get_accuracy(my_classifier.predict(test), test_target)
 if __name__ == '__main__':
     main(sys.argv)
