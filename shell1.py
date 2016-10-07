@@ -1,4 +1,5 @@
 from sklearn import datasets as ds
+from random import randint as rand
 import pandas as pd
 import numpy as np
 from collections import Counter as co
@@ -11,6 +12,25 @@ class Node:
     def __init__(self, feature_name, child_nodes):
         self.feature_name = feature_name
         self.child_nodes = child_nodes
+
+
+def height(node):
+    return 0 if not isinstance(node, Node) else \
+        np.max(list(map(lambda x: height(node.child_nodes[x]) + 1, node.child_nodes.keys())))
+
+
+def print_level_order(root):
+    for i in range(1, height(root) + 1):
+        print("Level", i)
+        print_given_level(root, i)
+
+
+def print_given_level(root, level):
+    if level == 1:
+        print("Node", root.feature_name, "with branches", list(root.child_nodes.keys()))
+    else:
+        for next_node in root.child_nodes.values():
+            print_given_level(next_node, level - 1)
 
 
 class HardCodedClassifier:
@@ -44,7 +64,10 @@ class DecisionTreeClassifier(HardCodedClassifier):
         self.tree = self.make_tree(range(train_data.shape[1]), range(train_target.shape[0]))
 
     def predict_single(self, test_instance):
-        pass
+        node = self.tree
+        while isinstance(node, Node):
+            node = node.child_nodes[test_instance[node.feature_name]]
+        return node
 
     def make_tree(self, features_left, indices):
         # get list of each class result for the indices
@@ -59,7 +82,7 @@ class DecisionTreeClassifier(HardCodedClassifier):
             return co(classes_list).most_common(1)[0][0]
 
         # which feature has the lowest entropy
-        best_feature = self.best_info_gain(features_left, indices)
+        best_feature = features_left[self.best_info_gain(features_left, indices)]
 
         # Get the unique possible values for this best feature
         values_of_feature = np.unique(self.data[:, best_feature])
@@ -74,10 +97,10 @@ class DecisionTreeClassifier(HardCodedClassifier):
                 value_indices[i] = [self.target.tolist().index(co(classes_list).most_common(1)[0][0])]
 
         # remove the best feature from the list of features left
-        remaining = [i for i in features_left if i != features_left[best_feature]]
+        remaining = [i for i in features_left if i != best_feature]
 
         # make a node with a dictionary as children.
-        return Node(features_left[best_feature],
+        return Node(best_feature,
                     {x: self.make_tree(remaining, y) for x in values_of_feature for y in value_indices})
 
     def best_info_gain(self, features, indices):
@@ -159,7 +182,7 @@ def get_split_size(data_set, target_set, success=False):
                 print("Error: Value entered was not between 1 and 0")
         except ValueError:
             print("Error: Value entered was not a decimal value")
-    return tts(data_set, target_set, train_size=split_size, random_state=20123)
+    return tts(data_set, target_set, train_size=split_size, random_state=rand(1, 100000))
 
 
 def process_data():
@@ -170,15 +193,33 @@ def process_data():
     training, test, training_target, test_target = get_split_size(data, target, False if option == 1 else True)
     classifier.set_classes(classes)
     classifier.train(training, training_target)
-    get_accuracy(classifier.predict(test), test_target)
+    print("{:.2f}".format(get_accuracy(classifier.predict(test), test_target)))
+
+
+def cross_validation(classifier, data, targets):
+    training, train, target, tar = tts(data, targets, random_state=rand(1, 100000))
+    training = np.append(training, train, axis=0)
+    target = np.append(target, tar, axis=0)
+    num_folds = 10
+    subset_size = len(data) // num_folds
+    results = []
+    for i in range(num_folds):
+        print("Round", i + 1)
+        testing_this_round = training[i * subset_size:][:subset_size]
+        test_target_this_round = target[i * subset_size:][:subset_size]
+        training_this_round = np.append(training[:i * subset_size], training[(i + 1) * subset_size:], axis=0)
+        train_target_this_round = np.append(target[:i * subset_size], target[(i + 1) * subset_size:], axis=0)
+        classifier.train(training_this_round, train_target_this_round)
+        results.append(get_accuracy(classifier.predict(testing_this_round), test_target_this_round))
+        print("Accuracy: {:.2f}%".format(results[i]))
+    return np.asarray(results).mean()
 
 
 def get_accuracy(results, test_targets):
     num_correct = 0
     for i in range(test_targets.size):
         num_correct += results[i] == test_targets[i]
-    print("Predicted ", num_correct, " of ", test_targets.size,
-          "\nFor an accuracy of {0:.2f}%".format(100 * (num_correct / test_targets.size)), sep="")
+    return 100 * (num_correct / test_targets.size)
 
 
 def get_classifier():
@@ -211,20 +252,12 @@ def get_dataset(convert_nominal=True):
 def main(argv):
     # process_data()
     d, t, ta = get_dataset(False)
-
     my_classifier = DecisionTreeClassifier()
-    train, test, t_target, test_target = get_split_size(d, t, True)
     my_classifier.set_classes(ta)
-    my_classifier.train(train, t_target)
-    print(my_classifier.tree.feature_name, my_classifier.tree.child_nodes,
-          my_classifier.tree.child_nodes['low'].feature_name, my_classifier.tree.child_nodes['low'].child_nodes,
-          my_classifier.tree.child_nodes['low'].child_nodes['more'].feature_name,
-          my_classifier.tree.child_nodes['low'].child_nodes['more'].child_nodes,
-          my_classifier.tree.child_nodes['low'].child_nodes['more'].child_nodes['low'].feature_name,
-          my_classifier.tree.child_nodes['low'].child_nodes['more'].child_nodes['low'].child_nodes,
-          my_classifier.tree.child_nodes['low'].child_nodes['more'].child_nodes['low'].child_nodes['vhigh'].feature_name,
-          my_classifier.tree.child_nodes['low'].child_nodes['more'].child_nodes['low'].child_nodes['vhigh'].child_nodes,
-          sep='\n')
+    print("\nMean Accuracy: {:.2f}%".format(cross_validation(my_classifier, d, t)), "Building Final Tree", sep='\n')
+    my_classifier.train(d, t)
+    if input("Finished building tree\nWould you like to print? (y/n)") == 'y':
+        print_level_order(my_classifier.tree)
 
 
 if __name__ == '__main__':
