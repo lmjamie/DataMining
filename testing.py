@@ -8,3 +8,4 @@ d =[]
 for items in range(iris.data.shape[1]):
     hist, edges = np.histogram(iris.data[:, items], bins=3)
     d.append(np.digitize(iris.data[:, items], edges))
+
