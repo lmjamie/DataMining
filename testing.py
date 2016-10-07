@@ -7,4 +7,8 @@ iris = ds.load_iris()
 d =[]
 for items in range(iris.data.shape[1]):
     hist, edges = np.histogram(iris.data[:, items], bins=3)
-    d.append(np.digitize(iris.data[:, items], edges))
+    d.append(np.digitize(iris.data[:, items], edges).tolist())
+de = []
+for i in range(len(d[0])):
+    de.append(list(map(lambda x: x[i], d)))
+print(np.asarray(de))
