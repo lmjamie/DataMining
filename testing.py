@@ -16,3 +16,7 @@ print(ed)
 for i in range(len(d[0])):
     de.append(list(map(lambda x: x[i], d)))
 print(np.asarray(de))
+=======
+    d.append(np.digitize(iris.data[:, items], edges))
+
+>>>>>>> 04ef5d7c91fdbc66f733497cacb1335197063ee6
