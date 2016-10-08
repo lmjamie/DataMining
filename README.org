@@ -4,7 +4,7 @@
 
 
 
-[[G-log][https://s3-us-west-2.amazonaws.com/camandcheese.com/goog.png]]
+[[G-log][http://www-cs-faculty.stanford.edu/~uno/dek-14May10-2.jpeg]]
 
 Just some colab work for a data mining class.
 
