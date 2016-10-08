@@ -4,8 +4,7 @@
 
 
 
-[[G-log][https://www.wired.com/wp-content/uploads/2015/09/google-logo.jpg]]
-
+[[G-log][https://s3-us-west-2.amazonaws.com/camandcheese.com/goog.png]]
 
 Just some colab work for a data mining class.
 
