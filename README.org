@@ -1,10 +1,11 @@
-* Welcome To OverLord
+* WELCOME TO OVERLORD
 
-** DataMining
+** Sifting through the gold
 
-Just some colab work for cs450
+
 
 [[G-log][https://www.wired.com/wp-content/uploads/2015/09/google-logo.jpg]]
 
 
+Just some colab work for a data mining class.
 
