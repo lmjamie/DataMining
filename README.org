@@ -4,7 +4,6 @@
 
 
 
-[[G-log][http://www-cs-faculty.stanford.edu/~uno/dek-14May10-2.jpeg]]
-
+[[G-log][http://www.kawabangga.com.img.800cdn.com/wp-content/uploads/2016/01/Donald-Knuth.jpg]]
 Just some colab work for a data mining class.
 
