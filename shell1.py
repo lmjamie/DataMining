@@ -186,21 +186,38 @@ def get_split_size(data_set, target_set, success=False):
 
 
 def process_data():
-    data, target, classes = get_dataset()
     classifier = get_classifier()
-    option = int(input(
-        "Please select one of the options:\n1 - Choose your own size for the train set\n2 - Default size 70%\n>> "))
-    training, test, training_target, test_target = get_split_size(data, target, False if option == 1 else True)
+    which = int(input("Please choose a Dataset:\n1 - Iris\n2 - Cars\n>> "))
+    de = []
+    if isinstance(classifier, DecisionTreeClassifier) and which == 1:
+        data, target, classes, de = get_dataset(which, isinstance(classifier, DecisionTreeClassifier))
+    else:
+        data, target, classes = get_dataset(which, isinstance(classifier, DecisionTreeClassifier))
     classifier.set_classes(classes)
-    classifier.train(training, training_target)
-    print("{:.2f}".format(get_accuracy(classifier.predict(test), test_target)))
+    if want_cv():
+        print("\nMean Accuracy: {:.2f}%".format(cross_validation(classifier, data, target)) + "\nBuilding final")
+        classifier.train(data, target)
+        if isinstance(classifier, DecisionTreeClassifier) and input(
+                "Finished building tree\nWould you like to print? (y/n)\n>> ") == 'y':
+            print_level_order(classifier.tree)
+    else:
+        option = int(input(
+            "Please select one of the options:\n1 - Choose your own size for the train set\n2 - Default size 70%\n>> "))
+        training, test, training_target, test_target = get_split_size(data, target, False if option == 1 else True)
+        classifier.train(training, training_target)
+        print("{:.2f}".format(get_accuracy(classifier.predict(test), test_target)))
+        print_level_order(classifier.tree)
+
+
+def want_cv():
+    return True if input("Would you like to cross validate this? (y/n)\n>> ") == 'y' else False
 
 
 def cross_validation(classifier, data, targets):
     training, train, target, tar = tts(data, targets, random_state=rand(1, 100000))
     training = np.append(training, train, axis=0)
     target = np.append(target, tar, axis=0)
-    num_folds = 10
+    num_folds = int(input("How many folds would you like for cross validation?\n>> "))
     subset_size = len(data) // num_folds
     results = []
     for i in range(num_folds):
@@ -223,24 +240,34 @@ def get_accuracy(results, test_targets):
 
 
 def get_classifier():
-    which = int(input("Please select a Classifier:\n1 - Hardcoded\n2 - K-Nearest Neighbors\n>> "))
-    return KGNClassifier() if which == 2 else HardCodedClassifier()
+    classifiers = {'1': DecisionTreeClassifier,
+                   '2': KGNClassifier,
+                   '3': HardCodedClassifier}
+    return classifiers[input(
+        "Please select a Classifier:\n1 - Decision Tree\n2 - K-Nearest Neighbors\n3 - Hardcoded\n>> ")]()
 
 
-def get_dataset(convert_nominal=True):
-    which = int(input("Please choose a Dataset:\n1 - Iris\n2 - Cars\n>> "))
+def get_dataset(which, need_nominal=False):
     if which == 1:
         iris = ds.load_iris()
-        if not convert_nominal:
+        if need_nominal:
             d = []
+            ed = []
+            for items in range(iris.data.shape[1]):
+                hist, edges = np.histogram(iris.data[:, items], bins=3)
 
+                # this just stores the values we used to bin things
+                ed.append(edges.tolist())
+                d.append(np.digitize(iris.data[:, items], edges).tolist())
+            return np.asarray(list(map(lambda i: (
+                list(map(lambda x: x[i], d))), range(iris.data.shape[0])))), iris.target, iris.target_names, ed
         return iris.data, iris.target, iris.target_names
     else:
         my_read_in = pd.read_csv("car.csv", dtype=str,
                                  names=["buying", "maint", "doors", "persons", "lug_boot", "safety", "target"])
         car_data = my_read_in.ix[:, :-1]
         car_target = my_read_in.target
-        if convert_nominal:
+        if need_nominal:
             car_target = car_target.replace("unacc", 0).replace("acc", 1).replace("good", 2).replace("vgood", 3)
             car_data.buying = car_data.buying.replace("low", 1).replace("med", 2).replace("high", 3).replace("vhigh", 4)
             car_data.maint = car_data.maint.replace("low", 1).replace("med", 2).replace("high", 3).replace("vhigh", 4)
@@ -253,14 +280,7 @@ def get_dataset(convert_nominal=True):
 
 
 def main(argv):
-    # process_data()
-    d, t, ta = get_dataset(False)
-    my_classifier = DecisionTreeClassifier()
-    my_classifier.set_classes(ta)
-    print("\nMean Accuracy: {:.2f}%".format(cross_validation(my_classifier, d, t)), "Building Final Tree", sep='\n')
-    my_classifier.train(d, t)
-    if input("Finished building tree\nWould you like to print? (y/n)") == 'y':
-        print_level_order(my_classifier.tree)
+    process_data()
 
 
 if __name__ == '__main__':

@@ -11,8 +11,6 @@ for items in range(iris.data.shape[1]):
     # this just stores the values we used to bin things
     ed.append(edges.tolist())
     d.append(np.digitize(iris.data[:, items], edges).tolist())
-de = []
 print(ed)
-for i in range(len(d[0])):
-    de.append(list(map(lambda x: x[i], d)))
+de = list(map(lambda i: (list(map(lambda x: x[i], d))), range(iris.data.shape[0])))
 print(np.asarray(de))
