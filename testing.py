@@ -19,18 +19,20 @@ from scipy.stats import binned_statistic_2d as bs2
 # print(np.asarray(de))
 
 
-
-
 def vi():
-    myset = rand(1, 150).tobytes()
+    myset = rand(1, 150)[0].tobytes()
     return list(map(lambda x: x + 1, myset))
 
 
-# def vi2():
-#     myset = rand(1, 150).tolist()[0]
-#     return list(map(lambda x: x + 1, myset))
-vi()
-import timeit
+def vi2():
+    myset = rand(1, 150).tolist()[0]
+    # print(myset)
+    return list(map(lambda x: x + 1, myset))
 
-# print("list", timeit.Timer('vi()', 'from __main__ import vi').timeit(10))
-# print("set", timeit.Timer('vi2()', 'from __main__ import vi2').timeit(10))
+import timeit
+# vi2()
+print("list", timeit.Timer('vi()', 'from __main__ import vi').timeit(100000))
+print("set", timeit.Timer('vi2()', 'from __main__ import vi2').timeit(100000))
+
+
+np.array().tobytes()
