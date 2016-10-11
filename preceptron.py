@@ -25,12 +25,12 @@ def get_weight(set_neurons):
     return [i.weight for i in set_neurons]
 
 
-def preceptron(ammount, sample):
-    set_neurons = make_nodes(ammount)
+def preceptron(amount, sample):
+    set_neurons = make_nodes(amount)
     co_values = list(map(lambda x, y: x * y, get_weight(set_neurons), sample))
     # TODO: make return instead of print
     if sum(co_values) > 0:
-       print("Result: 1")
+        print("Result: 1")
     else:
         print("Result: 2")
 
