@@ -1,0 +1,11 @@
+* WELCOME TO OVERLORD
+
+** Sifting through the gold
+
+
+
+[[G-log][http://www.kawabangga.com.img.800cdn.com/wp-content/uploads/2016/01/Donald-Knuth.jpg]]
+
+
+Just some colab work for a data mining class.
+
