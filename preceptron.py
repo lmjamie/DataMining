@@ -25,20 +25,17 @@ def get_weight(set_neurons):
     return [i.weight for i in set_neurons]
 
 
-xt = []
-def run_networks(set_neurons, sample):
+def preceptron(ammount, sample):
+    set_neurons = make_nodes(ammount)
     co_values = list(map(lambda x, y: x * y, get_weight(set_neurons), sample))
-    if sum(co_values) < 0:
-        for idx, items in enumerate(set_neurons):
-            items.weight += .25*(2 - 1)
-    xt.append(sum(get_weight(set_neurons)))
+    # TODO: make return instead of print
+    if sum(co_values) > 0:
+       print("Result: 1")
+    else:
+        print("Result: 2")
 
 
-iris = ds.load_iris()
-xy = make_nodes(4)
-print(get_weight(xy))
-for i in range(0, 1000):
-    run_networks(xy, iris.data[0])
-print(sum(get_weight(xy)))
-plt.plot(xt)
-plt.show()
+
+
+
+
