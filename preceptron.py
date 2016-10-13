@@ -20,11 +20,10 @@ def get_weight(set_neurons):
 
 
 def preceptron(nodes_x, sample):
-    neuron = make_nodes(nodes_x)
+    neuron, co_values  = make_nodes(nodes_x), []
     for items in neuron:
         items.set_weight(sample.shape[0])
         items.weight.append(-1.00)
-    co_values = []
     for items in neuron:
         co_values.append(list(map(lambda x, y: x * y, items.weight, sample)))
     for items in co_values:
