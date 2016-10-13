@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 class Neurons:
     def __init__(self):
         self.weight = random.triangular(-2.0, 3.0)
-        self.treshHold = 0
+        self.threshold = 0
         self.is_active = False
 
     def bias(self):
@@ -18,7 +18,7 @@ class Neurons:
 
 
 def make_nodes(size):
-    return [Neurons() for i in range(0, size)]
+    return [Neurons() for _ in range(size)]
 
 
 def get_weight(set_neurons):
