@@ -5,13 +5,13 @@ from pandas import read_csv as pd
 
 class Neurons:
     def __init__(self):
-<<<<<<< HEAD
+
         self.weight = None
         self.treshold = 0
-=======
-        self.weight = random.triangular(-2.0, 3.0)
+
+        self.weight = triangular(-2.0, 3.0)
         self.threshold = 0
->>>>>>> 66f2b67e7567f873e81797e1ce7e0142aad6ebd7
+
         self.is_active = False
 
     def bias(self):
