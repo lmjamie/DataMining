@@ -7,10 +7,9 @@ from collections import Counter as co
 from sklearn.cross_validation import train_test_split as tts
 from sys import argv
 
-
 read_in = rcsv("diabetes.csv", dtype=float)
 diabetes_data = read_in.ix[:, :-1].values
-diabetes_target = read_in.target.values
+diabetes_target = read_in.ix[:, -1].values
 
 
 class Neuron:
@@ -20,7 +19,8 @@ class Neuron:
         self.bias = -1
 
     def output(self, inputs):
-        inputs = inputs + [self.bias]
+        inputs = np.append(inputs, self.bias)
+        print(inputs)
         return 1 if sum([self.weights[i] * x for i, x in enumerate(inputs)]) >= self.threshold else 0
 
 
