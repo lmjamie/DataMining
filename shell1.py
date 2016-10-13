@@ -1,11 +1,27 @@
 from sklearn import datasets as ds
 from random import randint as rand
-import pandas as pd
+from random import triangular as tri
+from pandas import read_csv as rcsv
 import numpy as np
 from collections import Counter as co
 from sklearn.cross_validation import train_test_split as tts
-import sys
-pd.options.mode.chained_assignment = None
+from sys import argv
+
+
+read_in = rcsv("diabetes.csv", dtype=float)
+diabetes_data = read_in.ix[:, :-1].values
+diabetes_target = read_in.target.values
+
+
+class Neuron:
+    def __init__(self, num_attr):
+        self.weights = [tri(-1.0, 1.0) for _ in range(num_attr + 1)]
+        self.threshold = 0
+        self.bias = -1
+
+    def output(self, inputs):
+        inputs = inputs + [self.bias]
+        return 1 if sum([self.weights[i] * x for i, x in enumerate(inputs)]) >= self.threshold else 0
 
 
 class Node:
@@ -51,6 +67,15 @@ class HardCodedClassifier:
         for i in test_data:
             results.append(self.predict_single(i))
         return results
+
+
+class NeuralNetworkClassifier(HardCodedClassifier):
+    def __init__(self, size, num_attr):
+        super(HardCodedClassifier).__init__()
+        self.neural_nodes = [Neuron(num_attr) for _ in range(size)]
+
+    def get_results(self, inputs):
+        return [x.output(inputs) for x in self.neural_nodes]
 
 
 class DecisionTreeClassifier(HardCodedClassifier):
@@ -255,7 +280,6 @@ def get_dataset(which, need_nominal=False):
             ed = []
             for items in range(iris.data.shape[1]):
                 hist, edges = np.histogram(iris.data[:, items], bins=3)
-
                 # this just stores the values we used to bin things
                 ed.append(edges.tolist())
                 d.append(np.digitize(iris.data[:, items], edges).tolist())
@@ -263,7 +287,7 @@ def get_dataset(which, need_nominal=False):
                 list(map(lambda x: x[i], d))), range(iris.data.shape[0])))), iris.target, iris.target_names, ed
         return iris.data, iris.target, iris.target_names
     else:
-        my_read_in = pd.read_csv("car.csv", dtype=str,
+        my_read_in = rcsv("car.csv", dtype=str,
                                  names=["buying", "maint", "doors", "persons", "lug_boot", "safety", "target"])
         car_data = my_read_in.ix[:, :-1]
         car_target = my_read_in.target
@@ -280,8 +304,10 @@ def get_dataset(which, need_nominal=False):
 
 
 def main(argv):
-    process_data()
+    bill = NeuralNetworkClassifier(2, 8)
+    print(bill.get_results(diabetes_data[0]))
+    # process_data()
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    main(argv)
