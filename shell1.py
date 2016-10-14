@@ -21,9 +21,7 @@ class Neuron:
         self.l_rate = 0.2
 
     def output(self, inputs):
-        print(inputs + [self.bias])
         inputs = np.append(inputs, self.bias)
-        print(inputs)
         return 1 if sum([self.weights[i] * x for i, x in enumerate(inputs)]) >= self.threshold else 0
 
     def update_all(self, inputs, actual, expected):
