@@ -1,15 +1,16 @@
 from sklearn import datasets as ds
 from random import randint as rand
 from random import triangular as tri
-from pandas import read_csv as rcsv
+from pandas import read_csv as r_csv
 import numpy as np
 from collections import Counter as co
 from sklearn.cross_validation import train_test_split as tts
 from sys import argv
 
-read_in = rcsv("diabetes.csv", dtype=float)
+read_in = r_csv("diabetes.csv", names=["pregnant", "plasma_glucose", "blood_pressure", "triceps", "insulin", "mass",
+                                       "pedigree", "age", "target"], dtype=float)
 diabetes_data = read_in.ix[:, :-1].values
-diabetes_target = read_in.ix[:, -1].values
+diabetes_target = read_in.target.values
 
 
 class Neuron:
@@ -17,11 +18,17 @@ class Neuron:
         self.weights = [tri(-1.0, 1.0) for _ in range(num_attr + 1)]
         self.threshold = 0
         self.bias = -1
+        self.l_rate = 0.2
 
     def output(self, inputs):
+        print(inputs + [self.bias])
         inputs = np.append(inputs, self.bias)
         print(inputs)
         return 1 if sum([self.weights[i] * x for i, x in enumerate(inputs)]) >= self.threshold else 0
+
+    def update_all(self, inputs, actual, expected):
+        inputs = np.append(inputs, self.bias)
+        self.weights = [w - self.l_rate * (actual - expected) * i for w in self.weights for i in inputs]
 
 
 class Node:
@@ -76,6 +83,15 @@ class NeuralNetworkClassifier(HardCodedClassifier):
 
     def get_results(self, inputs):
         return [x.output(inputs) for x in self.neural_nodes]
+
+    def print_results(self, data):
+        for inputs in data:
+            print(self.get_results(inputs))
+
+    def check_results(self, data, target):
+        for index, inputs in enumerate(data):
+            expected = [0 for _ in range(len(self.neural_nodes))]
+            expected[target[index]] = 1
 
 
 class DecisionTreeClassifier(HardCodedClassifier):
@@ -287,8 +303,8 @@ def get_dataset(which, need_nominal=False):
                 list(map(lambda x: x[i], d))), range(iris.data.shape[0])))), iris.target, iris.target_names, ed
         return iris.data, iris.target, iris.target_names
     else:
-        my_read_in = rcsv("car.csv", dtype=str,
-                                 names=["buying", "maint", "doors", "persons", "lug_boot", "safety", "target"])
+        my_read_in = r_csv("car.csv", dtype=str,
+                           names=["buying", "maint", "doors", "persons", "lug_boot", "safety", "target"])
         car_data = my_read_in.ix[:, :-1]
         car_target = my_read_in.target
         if need_nominal:
@@ -304,8 +320,8 @@ def get_dataset(which, need_nominal=False):
 
 
 def main(argv):
-    bill = NeuralNetworkClassifier(2, 8)
-    print(bill.get_results(diabetes_data[0]))
+    my_network = NeuralNetworkClassifier(2, 8)
+    my_network.print_results(diabetes_data)
     # process_data()
 
 
