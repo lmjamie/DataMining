@@ -5,17 +5,7 @@ from pandas import read_csv as pd
 
 class Neurons:
     def __init__(self):
-
-        self.weight = None
-        self.treshold = 0
-
-        self.weight = triangular(-2.0, 3.0)
-        self.threshold = 0
-
-        self.is_active = False
-
-    def bias(self):
-        self.weight = -1
+        self.weight, self.weight, self.threshold, self.is_active = None, triangular(-2.0, 3.0), 0, False
 
     def set_weight(self, new_size):
         self.weight = [triangular(-2.0, 3.0) for i in range(new_size)]
@@ -30,11 +20,10 @@ def get_weight(set_neurons):
 
 
 def preceptron(nodes_x, sample):
-    neuron = make_nodes(nodes_x)
+    neuron, co_values  = make_nodes(nodes_x), []
     for items in neuron:
         items.set_weight(sample.shape[0])
         items.weight.append(-1.00)
-    co_values = []
     for items in neuron:
         co_values.append(list(map(lambda x, y: x * y, items.weight, sample)))
     for items in co_values:
