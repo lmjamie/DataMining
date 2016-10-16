@@ -7,11 +7,6 @@ from collections import Counter as co
 from sklearn.cross_validation import train_test_split as tts
 from sys import argv
 
-read_in = r_csv("diabetes.csv", names=["pregnant", "plasma_glucose", "blood_pressure", "triceps", "insulin", "mass",
-                                       "pedigree", "age", "target"], dtype=float)
-diabetes_data = read_in.ix[:, :-1].values
-diabetes_target = read_in.target.values
-
 
 class Neuron:
     def __init__(self, num_attr):
@@ -75,21 +70,34 @@ class HardCodedClassifier:
 
 
 class NeuralNetworkClassifier(HardCodedClassifier):
-    def __init__(self, size, num_attr):
+    def __init__(self):
         super(HardCodedClassifier).__init__()
-        self.neural_nodes = [Neuron(num_attr) for _ in range(size)]
+        self.neural_nodes = self.mean = self.std = None
+
+    def train(self, train_data, train_target):
+        self.mean = train_data.mean()
+        self.std = train_data.std()
+        self.data = self.standardize(train_data)
+        self.target = train_target
+        self.make_neurons(self.data.shape[1], int(input("How many neurons would you like?\n>> ")))
+
+    def make_neurons(self, num_attr, num_neurons):
+        self.neural_nodes = [Neuron(num_attr) for _ in range(num_neurons)]
 
     def get_results(self, inputs):
         return [x.output(inputs) for x in self.neural_nodes]
 
-    def print_results(self, data):
-        for inputs in data:
+    def print_results(self):
+        for inputs in self.data:
             print(self.get_results(inputs))
 
     def check_results(self, data, target):
         for index, inputs in enumerate(data):
             expected = [0 for _ in range(len(self.neural_nodes))]
             expected[target[index]] = 1
+
+    def standardize(self, data):
+        return (np.asarray(data) - self.mean) / self.std
 
 
 class DecisionTreeClassifier(HardCodedClassifier):
@@ -279,47 +287,72 @@ def get_accuracy(results, test_targets):
 
 
 def get_classifier():
-    classifiers = {'1': DecisionTreeClassifier,
-                   '2': KGNClassifier,
-                   '3': HardCodedClassifier}
+    classifiers = {'1': NeuralNetworkClassifier,
+                   '2': DecisionTreeClassifier,
+                   '3': KGNClassifier,
+                   '4': HardCodedClassifier}
     return classifiers[input(
-        "Please select a Classifier:\n1 - Decision Tree\n2 - K-Nearest Neighbors\n3 - Hardcoded\n>> ")]()
+        "Please select a Classifier:\n1 - Neural Network\n2 - Decision Tree\n3 - K-Nearest Neighbors\n"
+        + "4 - Hardcoded\n>> ")]()
+
+
+def get_iris(need_nominal=False):
+    iris = ds.load_iris()
+    if need_nominal:
+        d = []
+        ed = []
+        for items in range(iris.data.shape[1]):
+            hist, edges = np.histogram(iris.data[:, items], bins=3)
+            # this just stores the values we used to bin things
+            ed.append(edges.tolist())
+            d.append(np.digitize(iris.data[:, items], edges).tolist())
+        return np.asarray(list(map(lambda i: (
+            list(map(lambda x: x[i], d))), range(iris.data.shape[0])))), iris.target, iris.target_names, ed
+    return iris.data, iris.target, iris.target_names
+
+
+def get_cars(need_nominal=False):
+    my_read_in = r_csv("car.csv", dtype=str,
+                       names=["buying", "maint", "doors", "persons", "lug_boot", "safety", "target"])
+    car_data = my_read_in.ix[:, :-1]
+    car_target = my_read_in.target
+    if not need_nominal:
+        car_target = car_target.replace("unacc", 0).replace("acc", 1).replace("good", 2).replace("vgood", 3)
+        car_data.buying = car_data.buying.replace("low", 1).replace("med", 2).replace("high", 3).replace("vhigh", 4)
+        car_data.maint = car_data.maint.replace("low", 1).replace("med", 2).replace("high", 3).replace("vhigh", 4)
+        car_data.doors = car_data.doors.replace("2", 2).replace("3", 3).replace("4", 4).replace("5more", 5)
+        car_data.persons = car_data.persons.replace("2", 2).replace("4", 4).replace("more", 6)
+        car_data.lug_boot = car_data.lug_boot.replace("small", 1).replace("med", 2).replace("big", 3)
+        car_data.safety = car_data.safety.replace("low", 1).replace("med", 2).replace("high", 3)
+
+    return car_data.values, car_target.values, ["unacc", "acc", "good", "vgood"]
+
+
+def get_diabetes(need_nominal=False):
+    read_in = r_csv("diabetes.csv", names=["pregnant", "plasma_glucose", "blood_pressure", "triceps", "insulin", "mass",
+                                           "pedigree", "age", "target"], dtype=float)
+    diabetes_data = read_in.ix[:, :-1].values
+    diabetes_target = read_in.target.values
+
+    return diabetes_data, diabetes_target, ["negative", "Positive"]
 
 
 def get_dataset(which, need_nominal=False):
-    if which == 1:
-        iris = ds.load_iris()
-        if need_nominal:
-            d = []
-            ed = []
-            for items in range(iris.data.shape[1]):
-                hist, edges = np.histogram(iris.data[:, items], bins=3)
-                # this just stores the values we used to bin things
-                ed.append(edges.tolist())
-                d.append(np.digitize(iris.data[:, items], edges).tolist())
-            return np.asarray(list(map(lambda i: (
-                list(map(lambda x: x[i], d))), range(iris.data.shape[0])))), iris.target, iris.target_names, ed
-        return iris.data, iris.target, iris.target_names
-    else:
-        my_read_in = r_csv("car.csv", dtype=str,
-                           names=["buying", "maint", "doors", "persons", "lug_boot", "safety", "target"])
-        car_data = my_read_in.ix[:, :-1]
-        car_target = my_read_in.target
-        if need_nominal:
-            car_target = car_target.replace("unacc", 0).replace("acc", 1).replace("good", 2).replace("vgood", 3)
-            car_data.buying = car_data.buying.replace("low", 1).replace("med", 2).replace("high", 3).replace("vhigh", 4)
-            car_data.maint = car_data.maint.replace("low", 1).replace("med", 2).replace("high", 3).replace("vhigh", 4)
-            car_data.doors = car_data.doors.replace("2", 2).replace("3", 3).replace("4", 4).replace("5more", 5)
-            car_data.persons = car_data.persons.replace("2", 2).replace("4", 4).replace("more", 6)
-            car_data.lug_boot = car_data.lug_boot.replace("small", 1).replace("med", 2).replace("big", 3)
-            car_data.safety = car_data.safety.replace("low", 1).replace("med", 2).replace("high", 3)
-
-        return car_data.values, car_target.values, ["unacc", "acc", "good", "vgood"]
+    dataset = {1: get_iris,
+               2: get_cars,
+               3: get_diabetes}
+    return dataset[which](need_nominal)
 
 
 def main(argv):
-    my_network = NeuralNetworkClassifier(2, 8)
-    my_network.print_results(diabetes_data)
+    print("Test for Neural Network part 1")
+    classifier = get_classifier()
+    which = int(input("Which dataset would you like?\n1 - Iris\n2 - Cars\n3 - Diabetes\n>> "))
+    data, target, classes = get_dataset(which, isinstance(classifier, DecisionTreeClassifier))
+    train_data, test_data, train_target, test_target = get_split_size(data, target)
+    classifier.set_classes(classes)
+    classifier.train(train_data, train_target)
+    classifier.print_results()
     # process_data()
 
 
