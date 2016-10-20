@@ -83,15 +83,20 @@ class NeuralNetworkClassifier(HardCodedClassifier):
         self.target = train_target
         self.make_network(int(input("How many hidden layers would you like?\n>> ")))
 
-    def make_layer(self, num_inputs, num_nodes):
-        return [Neuron(num_inputs) for _ in range(num_nodes)]
+    def get_num_nodes(self, layer, num_layers):
+        return int(input("How many Neurons would you like in layer " + str(
+            layer + 1) + "?\n>> ") if layer < num_layers else len(self.classes))
+
+    def num_weights(self, layer):
+        return len(self.network_layers[layer - 1]) if layer > 0 else self.num_attr
 
     def make_network(self, num_layers):
         self.network_layers = []
         for i in range(num_layers + 1):
-            self.network_layers.append(self.make_layer(len(self.network_layers[i - 1]) if i > 0 else self.num_attr, int(
-                input("How many Neurons would you like in layer " + str(i + 1) + "?\n>> ") if i < num_layers else len(
-                    self.classes))))
+            self.network_layers.append(self.make_layer(self.num_weights(i), self.get_num_nodes(i, num_layers)))
+
+    def make_layer(self, num_inputs, num_nodes):
+        return [Neuron(num_inputs) for _ in range(num_nodes)]
 
     def get_results(self, inputs):
         results = []
