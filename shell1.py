@@ -10,21 +10,21 @@ from sys import argv
 
 
 class Neuron:
-    def __init__(self, num_attr):
-        self.weights = [tri(-1.0, 1.0) for _ in range(num_attr + 1)]
+    def __init__(self, num_inputs):
+        self.weights = [tri(-1.0, 1.0) for _ in range(num_inputs + 1)]
         self.threshold = 0
         self.bias = -1
         self.l_rate = 0.2
 
     def output(self, inputs):
-        inputs = np.append(inputs, self.bias)
+        inputs = np.append(inputs, [self.bias])
         return self.sigmoid(inputs)
 
     def sigmoid(self, inputs):
         return expit(sum([self.weights[i] * x for i, x in enumerate(inputs)]))
 
     def update_all(self, inputs, actual, expected):
-        inputs = np.append(inputs, self.bias)
+        inputs = np.append(inputs, [self.bias])
         self.weights = [w - self.l_rate * (actual - expected) * i for w in self.weights for i in inputs]
 
 
@@ -84,16 +84,16 @@ class NeuralNetworkClassifier(HardCodedClassifier):
         self.make_network(int(input("How many hidden layers would you like?\n>> ")))
 
     def get_num_nodes(self, layer, num_layers):
-        return int(input("How many Neurons would you like in layer " + str(
+        return int(input("How many Neurons would you like in hidden layer " + str(
             layer + 1) + "?\n>> ") if layer < num_layers else len(self.classes))
 
-    def num_weights(self, layer):
+    def num_inputs(self, layer):
         return len(self.network_layers[layer - 1]) if layer > 0 else self.num_attr
 
     def make_network(self, num_layers):
         self.network_layers = []
         for i in range(num_layers + 1):
-            self.network_layers.append(self.make_layer(self.num_weights(i), self.get_num_nodes(i, num_layers)))
+            self.network_layers.append(self.make_layer(self.num_inputs(i), self.get_num_nodes(i, num_layers)))
 
     def make_layer(self, num_inputs, num_nodes):
         return [Neuron(num_inputs) for _ in range(num_nodes)]
@@ -105,8 +105,9 @@ class NeuralNetworkClassifier(HardCodedClassifier):
         return results
 
     def predict_single(self, test_instance):
-        results = self.get_results(test_instance)
-        return np.argmax(results)
+        results = self.get_results(self.standardize(test_instance))
+        print(results[-1])
+        return np.argmax(results[-1])
 
     def standardize(self, data):
         return (np.asarray(data) - self.mean) / self.std
@@ -263,7 +264,7 @@ def process_data():
             "Please select one of the options:\n1 - Choose your own size for the train set\n2 - Default size 70%\n>> "))
         training, test, training_target, test_target = get_split_size(data, target, False if option == 1 else True)
         classifier.train(training, training_target)
-        print("{:.2f}".format(get_accuracy(classifier.predict(test), test_target)))
+        print("Accuracy: {:.2f}%".format(get_accuracy(classifier.predict(test), test_target)))
 
 
 def want_cv():
@@ -278,7 +279,7 @@ def cross_validation(classifier, data, targets):
     subset_size = len(data) // num_folds
     results = []
     for i in range(num_folds):
-        print("Round", i + 1)
+        print("\nRound", i + 1)
         testing_this_round = training[i * subset_size:][:subset_size]
         test_target_this_round = target[i * subset_size:][:subset_size]
         training_this_round = np.append(training[:i * subset_size], training[(i + 1) * subset_size:], axis=0)
