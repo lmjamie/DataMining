@@ -5,6 +5,7 @@ from pandas import read_csv as r_csv
 import numpy as np
 from collections import Counter as co
 from sklearn.cross_validation import train_test_split as tts
+from scipy.special import expit
 from sys import argv
 
 
@@ -17,7 +18,10 @@ class Neuron:
 
     def output(self, inputs):
         inputs = np.append(inputs, self.bias)
-        return 1 if sum([self.weights[i] * x for i, x in enumerate(inputs)]) >= self.threshold else 0
+        return self.sigmoid(inputs)
+
+    def sigmoid(self, inputs):
+        return expit(sum([self.weights[i] * x for i, x in enumerate(inputs)]))
 
     def update_all(self, inputs, actual, expected):
         inputs = np.append(inputs, self.bias)
@@ -63,38 +67,41 @@ class HardCodedClassifier:
         self.classes = classes
 
     def predict(self, test_data):
-        results = []
-        for i in test_data:
-            results.append(self.predict_single(i))
-        return results
+        return [self.predict_single(inst) for inst in test_data]
 
 
 class NeuralNetworkClassifier(HardCodedClassifier):
     def __init__(self):
         super(HardCodedClassifier).__init__()
-        self.neural_nodes = self.mean = self.std = None
+        self.network_layers = self.mean = self.std = self.num_attr = None
 
     def train(self, train_data, train_target):
         self.mean = train_data.mean()
         self.std = train_data.std()
         self.data = self.standardize(train_data)
+        self.num_attr = self.data.shape[1]
         self.target = train_target
-        self.make_neurons(self.data.shape[1], int(input("How many neurons would you like?\n>> ")))
+        self.make_network(int(input("How many hidden layers would you like?\n>> ")))
 
-    def make_neurons(self, num_attr, num_neurons):
-        self.neural_nodes = [Neuron(num_attr) for _ in range(num_neurons)]
+    def make_layer(self, num_inputs, num_nodes):
+        return [Neuron(num_inputs) for _ in range(num_nodes)]
+
+    def make_network(self, num_layers):
+        self.network_layers = []
+        for i in range(num_layers + 1):
+            self.network_layers.append(self.make_layer(len(self.network_layers[i - 1]) if i > 0 else self.num_attr, int(
+                input("How many Neurons would you like in layer " + str(i + 1) + "?\n>> ") if i < num_layers else len(
+                    self.classes))))
 
     def get_results(self, inputs):
-        return [x.output(inputs) for x in self.neural_nodes]
+        results = []
+        for index, layer in enumerate(self.network_layers):
+            results.append([n.output(results[index - 1] if index > 0 else inputs) for n in layer])
+        return results
 
-    def print_results(self):
-        for inputs in self.data:
-            print(self.get_results(inputs))
-
-    def check_results(self, data, target):
-        for index, inputs in enumerate(data):
-            expected = [0 for _ in range(len(self.neural_nodes))]
-            expected[target[index]] = 1
+    def predict_single(self, test_instance):
+        results = self.get_results(test_instance)
+        return np.argmax(results)
 
     def standardize(self, data):
         return (np.asarray(data) - self.mean) / self.std
@@ -234,8 +241,7 @@ def get_split_size(data_set, target_set, success=False):
 
 def process_data():
     classifier = get_classifier()
-    which = int(input("Please choose a Dataset:\n1 - Iris\n2 - Cars\n>> "))
-    de = []
+    which = int(input("Which dataset would you like?\n1 - Iris\n2 - Cars\n3 - Diabetes\n>> "))
     if isinstance(classifier, DecisionTreeClassifier) and which == 1:
         data, target, classes, de = get_dataset(which, isinstance(classifier, DecisionTreeClassifier))
     else:
@@ -253,7 +259,6 @@ def process_data():
         training, test, training_target, test_target = get_split_size(data, target, False if option == 1 else True)
         classifier.train(training, training_target)
         print("{:.2f}".format(get_accuracy(classifier.predict(test), test_target)))
-        print_level_order(classifier.tree)
 
 
 def want_cv():
@@ -345,15 +350,7 @@ def get_dataset(which, need_nominal=False):
 
 
 def main(argv):
-    print("Test for Neural Network part 1")
-    classifier = get_classifier()
-    which = int(input("Which dataset would you like?\n1 - Iris\n2 - Cars\n3 - Diabetes\n>> "))
-    data, target, classes = get_dataset(which, isinstance(classifier, DecisionTreeClassifier))
-    train_data, test_data, train_target, test_target = get_split_size(data, target)
-    classifier.set_classes(classes)
-    classifier.train(train_data, train_target)
-    classifier.print_results()
-    # process_data()
+    process_data()
 
 
 if __name__ == '__main__':
