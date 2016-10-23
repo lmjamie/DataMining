@@ -1,14 +1,12 @@
 from sklearn import datasets as ds
 from random import triangular
 from pandas import read_csv as pd
-
+from numpy import array as array
+from scipy.special import expit
 
 class Neurons:
-    def __init__(self):
-        self.weight, self.weight, self.threshold, self.is_active = None, triangular(-2.0, 3.0), 0, False
-
-    def set_weight(self, new_size):
-        self.weight = [triangular(-2.0, 3.0) for i in range(new_size)]
+    def __init__(self,size):
+        self.weight, self.weight, self.threshold, self.is_active = None, [triangular(-2.0, 3.0) for i in range(size)], 0, False
 
 
 def make_nodes(size):
@@ -18,20 +16,25 @@ def make_nodes(size):
 def get_weight(set_neurons):
     return [i.weight for i in set_neurons]
 
+def preceptron(node, item_list):
+    weight = node.weight
+    sigmoid = expit(sum(list(map(lambda x, y: x *y, weight, item_list))))
 
-def preceptron(nodes_x, sample):
-    neuron, co_values  = make_nodes(nodes_x), []
-    for items in neuron:
-        items.set_weight(sample.shape[0])
-        items.weight.append(-1.00)
-    for items in neuron:
-        co_values.append(list(map(lambda x, y: x * y, items.weight, sample)))
-    for items in co_values:
-        if sum(items) > 0:
-            print("Result: 1")
-        else:
-            print("Result: 0")
 
+
+# def preceptron(nodes_x, sample):
+#     neuron, co_values, results  = make_nodes(nodes_x), [], []
+#     for items in neuron:
+#         items.set_weight(sample.shape[0])
+#         items.weight.append(-1.00)
+#     for items in neuron:
+#         co_values.append(list(map(lambda x, y: x * y, items.weight, sample)))
+#     for items in co_values:
+#         if sum(items) > 0:
+#             results.append(1)
+#         else:
+#             results.append(0)
+#         print(results)
 
 def load_data():
     user_choice = int(input("1.Iris Data Set\n2.Pima Indian Diabetes Data Set\n>> "))
@@ -54,4 +57,8 @@ def load_data():
             preceptron(5, i)
 
 
-load_data()
+iris = ds.load_iris()
+target = iris.target
+data = iris.data
+node = Neurons(4)
+preceptron(node,data[0])
