@@ -14,7 +14,6 @@ class Neuron:
         self.weights = [tri(-1.0, 1.0) for _ in range(num_inputs + 1)]
         self.threshold = 0
         self.bias = -1
-        self.l_rate = 0.2
 
     def output(self, inputs):
         inputs = np.append(inputs, [self.bias])
@@ -22,11 +21,6 @@ class Neuron:
 
     def sigmoid(self, inputs):
         return expit(sum([self.weights[i] * x for i, x in enumerate(inputs)]))
-
-    def update_all(self, inputs, actual, expected):
-        inputs = np.append(inputs, [self.bias])
-        self.weights = [w - self.l_rate * (actual - expected) * i for w in self.weights for i in inputs]
-
 
 class Node:
     def __init__(self, feature_name, child_nodes):
@@ -73,15 +67,21 @@ class HardCodedClassifier:
 class NeuralNetworkClassifier(HardCodedClassifier):
     def __init__(self):
         super(HardCodedClassifier).__init__()
-        self.network_layers = self.mean = self.std = self.num_attr = None
+        self.network_layers = self.mean = self.std = self.num_attr = self.l_rate = None
 
     def train(self, train_data, train_target):
-        self.mean = train_data.mean()
-        self.std = train_data.std()
-        self.data = self.standardize(train_data)
+        self.mean, self.std, self.l_rate = train_data.mean(), train_data.std(), 0.2
+        self.data, self.target = self.standardize(train_data), train_target
         self.num_attr = self.data.shape[1]
-        self.target = train_target
         self.make_network(int(input("How many hidden layers would you like?\n>> ")))
+        results = self.get_results(self.data[1])
+        self.update(1, self.data[1], results)
+        print(results[-1], self.target[1])
+        results = self.get_results(self.data[1])
+        print(results[-1], "Now")
+        input("holding")
+        # for epoch in range(int(input("How many Epochs would you like?\n>>"))):
+        #     pass
 
     def get_num_nodes(self, layer, num_layers):
         return int(input("How many Neurons would you like in hidden layer " + str(
@@ -104,9 +104,25 @@ class NeuralNetworkClassifier(HardCodedClassifier):
             results.append([n.output(results[index - 1] if index > 0 else inputs) for n in layer])
         return results
 
+    def update(self, row, f_inputs, results):
+        errors = [self.get_output_error(r, 0 if self.target[row] != np.argmax(results[-1]) else 1) for r in results[-1]]
+        for layer_num, layer in reversed(list(enumerate(self.network_layers))):
+            for i in range(len(self.network_layers[layer_num])):
+                self.network_layers[layer_num][i].weights = self.update_weights(
+                    self.network_layers[layer_num][i], results[layer_num - 1] if layer_num > 0 else f_inputs, errors)
+            errors = [self.get_hidden_error(r, n.weights, errors) for r in results[layer_num] for n in layer]
+
+    def update_weights(self, neuron, inputs, errors):
+        return [w - self.l_rate * i * e for w in neuron.weights for i in inputs for e in errors]
+
+    def get_output_error(self, result, target):
+        return result * (1 - result) * (result - target)
+
+    def get_hidden_error(self, result, f_weights, errors):
+        return result * (1 - result) * sum([fw * e for fw in f_weights for e in errors])
+
     def predict_single(self, test_instance):
         results = self.get_results(self.standardize(test_instance))
-        print(results[-1])
         return np.argmax(results[-1])
 
     def standardize(self, data):
