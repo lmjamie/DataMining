@@ -31,10 +31,10 @@ class NeuralNetworkClassifier(hcc):
         self.make_network(int(input("How many hidden layers would you like?\n>> ")))
         accuracy = []
         prediction = []
-        for i, x in enumerate(self.data):
-            results = self.get_results(x)
+        for d, t in zip(self.data, self.target):
+            results = self.get_results(d)
             prediction.append(np.argmax(results[-1]))
-            self.update(self.target[i], x, results)
+            self.update(t, d, results)
             # for epoch in range(int(input("How many Epochs would you like?\n>>"))):
             #     pass
         accuracy.append(100 * (sum([self.target[i] == p for i, p in enumerate(prediction)]) / self.target.size))
