@@ -34,7 +34,7 @@ class NeuralNetworkClassifier(hcc):
         for i, x in enumerate(self.data):
             results = self.get_results(x)
             prediction.append(np.argmax(results[-1]))
-            self.update(i, x, results)
+            self.update(self.target[i], x, results)
             # for epoch in range(int(input("How many Epochs would you like?\n>>"))):
             #     pass
         accuracy.append(100 * (sum([self.target[i] == p for i, p in enumerate(prediction)]) / self.target.size))
@@ -61,17 +61,17 @@ class NeuralNetworkClassifier(hcc):
             results.append([n.output(results[index - 1] if index > 0 else inputs) for n in layer])
         return results
 
-    def update(self, row, f_inputs, results):
-        self.update_errors(row, results)
+    def update(self, target, f_inputs, results):
+        self.update_errors(target, results)
         self.update_all_weights(f_inputs, results)
 
-    def update_errors(self, row, results):
+    def update_errors(self, target, results):
         for i_layer, layer in reversed(list(enumerate(self.network_layers))):
             for i_neuron, neuron in enumerate(layer):
                 neuron.error = self.get_hidden_error(
                     results[i_layer][i_neuron], [nn.weights[i_neuron] for nn in self.network_layers[i_layer + 1]],
                     [nn.error for nn in self.network_layers[i_layer + 1]]) if i_layer < len(
-                    results) - 1 else self.get_output_error(results[i_layer][i_neuron], i_neuron == self.target[row])
+                    results) - 1 else self.get_output_error(results[i_layer][i_neuron], i_neuron == target)
             # print("Layer {}".format(i_layer), [n.error for n in layer])
 
     def update_all_weights(self, f_inputs, results):
