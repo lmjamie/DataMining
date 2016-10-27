@@ -2,6 +2,7 @@ from random import triangular as tri
 from hardcoded import HardCodedClassifier as hcc
 import numpy as np
 from scipy.special import expit
+import matplotlib.pyplot as plt
 
 
 class Neuron:
@@ -25,24 +26,29 @@ class NeuralNetworkClassifier(hcc):
         self.network_layers = self.mean = self.std = self.num_attr = self.l_rate = None
 
     def train(self, train_data, train_target):
-        self.mean, self.std, self.l_rate = train_data.mean(), train_data.std(), 0.1
+        self.mean, self.std, self.l_rate = train_data.mean(), train_data.std(), 0.2
         self.data, self.target = self.standardize(train_data), train_target
         self.num_attr = self.data.shape[1]
         self.make_network(int(input("How many hidden layers would you like?\n>> ")))
+        self.epoch_learn(int(input("How many Epochs would you like?\n>>")))
+
+    def epoch_learn(self, num_epochs):
         accuracy = []
-        prediction = []
-        for d, t in zip(self.data, self.target):
-            results = self.get_results(d)
-            prediction.append(np.argmax(results[-1]))
-            self.update(t, d, results)
-            # for epoch in range(int(input("How many Epochs would you like?\n>>"))):
-            #     pass
-        accuracy.append(100 * (sum([self.target[i] == p for i, p in enumerate(prediction)]) / self.target.size))
-        print(accuracy)
+        for epoch in range(num_epochs):
+            predictions = []
+            for d, t in zip(self.data, self.target):
+                results = self.get_results(d)
+                predictions.append(np.argmax(results[-1]))
+                self.update(t, d, results)
+            accuracy.append(100 * sum([self.target[i] == p for i, p in enumerate(predictions)]) / self.target.size)
+            print("Accuracy for Epoch {}: {:.4f}%".format(epoch + 1, accuracy[epoch]))
+        if input("Plot accuracy graph? (y/n)\n>> ") == 'y':
+            plt.plot(range(1, num_epochs + 1), accuracy)
+            plt.show()
 
     def get_num_nodes(self, layer, num_layers):
-        return int(input("How many Neurons would you like in hidden layer " + str(
-            layer + 1) + "?\n>> ") if layer < num_layers else len(self.classes))
+        return int(input("How many Neurons would you like in hidden layer {}?\n>> ".format(layer + 1))
+                   if layer < num_layers else len(self.classes))
 
     def num_inputs(self, layer):
         return len(self.network_layers[layer - 1]) if layer > 0 else self.num_attr
@@ -68,11 +74,18 @@ class NeuralNetworkClassifier(hcc):
     def update_errors(self, target, results):
         for i_layer, layer in reversed(list(enumerate(self.network_layers))):
             for i_neuron, neuron in enumerate(layer):
-                neuron.error = self.get_hidden_error(
-                    results[i_layer][i_neuron], [nn.weights[i_neuron] for nn in self.network_layers[i_layer + 1]],
-                    [nn.error for nn in self.network_layers[i_layer + 1]]) if i_layer < len(
-                    results) - 1 else self.get_output_error(results[i_layer][i_neuron], i_neuron == target)
-            # print("Layer {}".format(i_layer), [n.error for n in layer])
+                neuron.error = self.get_error(i_neuron, i_layer, target, results)
+
+    def get_error(self, i_neuron, i_layer, target, results):
+        return self.get_hidden_error(
+            results[i_layer][i_neuron], self.get_f_weights(i_neuron, i_layer), self.get_f_errors(i_layer)) \
+            if i_layer < len(results) - 1 else self.get_output_error(results[i_layer][i_neuron], i_neuron == target)
+
+    def get_f_weights(self, i_neuron, i_layer):
+        return [nn.weights[i_neuron] for nn in self.network_layers[i_layer + 1]]
+
+    def get_f_errors(self, i_layer):
+        return [nn.error for nn in self.network_layers[i_layer + 1]]
 
     def update_all_weights(self, f_inputs, results):
         for i, layer in enumerate(self.network_layers):

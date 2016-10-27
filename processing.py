@@ -68,10 +68,7 @@ def cross_validation(classifier, data, targets):
 
 
 def get_accuracy(results, test_targets):
-    num_correct = 0
-    for i in range(test_targets.size):
-        num_correct += results[i] == test_targets[i]
-    return 100 * (num_correct / test_targets.size)
+    return 100 * sum([test_targets[i] == p for i, p in enumerate(results)]) / test_targets.size
 
 
 def get_classifier():
