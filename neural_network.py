@@ -26,25 +26,44 @@ class NeuralNetworkClassifier(hcc):
         self.network_layers = self.mean = self.std = self.num_attr = self.l_rate = None
 
     def train(self, train_data, train_target):
-        self.mean, self.std, self.l_rate = train_data.mean(), train_data.std(), 0.2
+        self.mean, self.std = train_data.mean(), train_data.std()
         self.data, self.target = self.standardize(train_data), train_target
         self.num_attr = self.data.shape[1]
+        self.l_rate = float(input("What learning rate would you like? (e.g 0.1 - 0.4)\n>> "))
         self.make_network(int(input("How many hidden layers would you like?\n>> ")))
         self.epoch_learn(int(input("How many Epochs would you like?\n>>")))
 
     def epoch_learn(self, num_epochs):
         accuracy = []
+        error = []
+        display = input("Would you like to display the Accuracy and the Error for this training? (y/n)\n>> ") == 'y'
+
         for epoch in range(num_epochs):
             predictions = []
+            ss_error = []
             for d, t in zip(self.data, self.target):
                 results = self.get_results(d)
                 predictions.append(np.argmax(results[-1]))
+                ss_error.append(sum([((i == t) - r) ** 2 for i, r in enumerate(results[-1])]))
                 self.update(t, d, results)
             accuracy.append(100 * sum([self.target[i] == p for i, p in enumerate(predictions)]) / self.target.size)
-            print("Accuracy for Epoch {}: {:.4f}%".format(epoch + 1, accuracy[epoch]))
-        if input("Plot accuracy graph? (y/n)\n>> ") == 'y':
-            plt.plot(range(1, num_epochs + 1), accuracy)
+            error.append(sum(ss_error) / len(ss_error))
+            if display:
+                print("Accuracy for Epoch {}: {:.5f}%\nAverage Sum Squared Error: {:.7f}\n---------------------".format(
+                    epoch + 1, accuracy[epoch], error[epoch]))
+        self.plot(accuracy, "Accuracy", num_epochs)
+        self.plot(error, "Error", num_epochs)
+
+    def plot(self, data, data_name, num_epochs):
+        if input("Do you want to plot the graph for {}? (y/n)\n>> ".format(data_name)) == 'y':
+            plt.plot(range(1, num_epochs + 1), data)
+            plt.title("Training {}".format(data_name))
+            plt.xlabel("Epoch")
+            plt.ylabel(data_name)
+            print("Showing graph for {}. Please close the graph to continue.\n".format(data_name))
             plt.show()
+        else:
+            print("Skipping graph for {}".format(data_name))
 
     def get_num_nodes(self, layer, num_layers):
         return int(input("How many Neurons would you like in hidden layer {}?\n>> ".format(layer + 1))
